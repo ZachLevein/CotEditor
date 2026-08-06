@@ -212,14 +212,16 @@ final class DocumentWindowController: NSWindowController, NSWindowDelegate {
                 ?? ""
         } else if let window = self.window as? DocumentWindow {
             // display the user-set window label as the title with the document name below it
-            let documentTitle = window.title
-            if window.windowLabel.isEmpty {
-                window.tab.title = documentTitle
-                window.subtitle = ""
-            } else {
+            // -> Never touch `window.tab` when unlabeled: accessing it creates the tab object,
+            //    which breaks AppKit's automatic tab placement for newly opened documents.
+            if !window.windowLabel.isEmpty {
+                let documentTitle = window.title
                 window.tab.title = documentTitle
                 window.title = window.windowLabel
                 window.subtitle = documentTitle
+            } else if !window.subtitle.isEmpty {
+                window.tab.title = window.title
+                window.subtitle = ""
             }
         }
     }
@@ -254,16 +256,19 @@ final class DocumentWindowController: NSWindowController, NSWindowDelegate {
     func windowDidBecomeMain(_ notification: Notification) {
 
         // adopt the tab group's label when this window newly joined a labeled group
-        if let window = self.window as? DocumentWindow,
-           window.windowLabel.isEmpty,
-           let groupLabel = (window.tabGroup?.windows ?? [])
-            .compactMap({ ($0 as? DocumentWindow)?.windowLabel })
-            .first(where: { !$0.isEmpty })
-        {
+        // -> Defer: this fires while AppKit is still placing a newly opened window,
+        //    and inspecting the tab group at that point breaks automatic tab placement.
+        Task { @MainActor [weak self] in
+            guard
+                let window = self?.window as? DocumentWindow,
+                window.windowLabel.isEmpty,
+                let groupLabel = (window.tabGroup?.windows ?? [])
+                    .compactMap({ ($0 as? DocumentWindow)?.windowLabel })
+                    .first(where: { !$0.isEmpty })
+            else { return }
+
             window.windowLabel = groupLabel
         }
-
-        self.synchronizeWindowTitleWithDocumentName()
     }
 
 
