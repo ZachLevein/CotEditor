@@ -112,9 +112,29 @@ final class DocumentWindow: NSWindow {
     
     
     override var isOpaque: Bool {
-        
+
         willSet { self.willChangeValue(for: \.isOpaque) }
         didSet { self.didChangeValue(for: \.isOpaque) }
+    }
+
+
+    override func sendEvent(_ event: NSEvent) {
+
+        // offer the window label commands by right-clicking the title/toolbar area
+        // -> Present on mouse-up: a menu opened on mouse-down is dismissed again
+        //    by the mouse-up that follows.
+        if event.type == .rightMouseDown || event.type == .rightMouseUp,
+           event.locationInWindow.y > self.contentLayoutRect.maxY,
+           let contentView = self.contentView,
+           let menu = (self.windowController as? DocumentWindowController)?.titlebarMenu()
+        {
+            if event.type == .rightMouseUp {
+                NSMenu.popUpContextMenu(menu, with: event, for: contentView)
+            }
+            return
+        }
+
+        super.sendEvent(event)
     }
     
     

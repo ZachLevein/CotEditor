@@ -212,25 +212,86 @@ final class DocumentWindowController: NSWindowController, NSWindowDelegate {
                 ?? ""
         } else if let window = self.window as? DocumentWindow {
             // display the user-set window label as the title with the document name below it
-            // -> Never touch `window.tab` when unlabeled: accessing it creates the tab object,
-            //    which breaks AppKit's automatic tab placement for newly opened documents.
+            let documentTitle = window.title
             if !window.windowLabel.isEmpty {
-                let documentTitle = window.title
-                window.tab.title = documentTitle
                 window.title = window.windowLabel
                 window.subtitle = documentTitle
             } else if !window.subtitle.isEmpty {
-                window.tab.title = window.title
                 window.subtitle = ""
             }
+            self.applyTabTitle(documentTitle)
+        }
+    }
+
+
+    /// Keeps the tab bar showing the document name even while the window title shows a label.
+    ///
+    /// - Note: Deferred, and skipped for windows that aren't tabbed: reading `window.tab`
+    ///   *creates* the tab object, and doing that while AppKit is placing a window stops it
+    ///   from joining or forming a tab group.
+    private func applyTabTitle(_ title: String) {
+
+        Task { @MainActor [weak self] in
+            guard
+                let window = self?.window as? DocumentWindow,
+                window.tabGroup != nil
+            else { return }
+
+            window.tab.title = title
         }
     }
     
     
+    /// The contextual menu for the title/toolbar area, or `nil` if the window doesn't support labeling.
+    func titlebarMenu() -> NSMenu? {
+
+        guard
+            !self.isDirectoryDocument,
+            let window = self.window as? DocumentWindow
+        else { return nil }
+
+        let menu = NSMenu()
+
+        let labelItem = NSMenuItem(
+            title: window.windowLabel.isEmpty
+                ? String(localized: "Label Window…", comment: "menu item in the title bar contextual menu")
+                : String(localized: "Change Window Label…", comment: "menu item in the title bar contextual menu"),
+            action: #selector(labelWindow), keyEquivalent: "")
+        labelItem.target = self
+        menu.addItem(labelItem)
+
+        if !window.windowLabel.isEmpty {
+            let removeItem = NSMenuItem(title: String(localized: "Remove Window Label",
+                                                      comment: "menu item in the title bar contextual menu"),
+                                        action: #selector(removeWindowLabel), keyEquivalent: "")
+            removeItem.target = self
+            menu.addItem(removeItem)
+        }
+
+        if window.toolbar?.allowsUserCustomization == true {
+            menu.addItem(.separator())
+            let customizeItem = NSMenuItem(title: String(localized: "Customize Toolbar…", table: "MainMenu"),
+                                          action: #selector(NSWindow.runToolbarCustomizationPalette),
+                                          keyEquivalent: "")
+            customizeItem.target = window
+            menu.addItem(customizeItem)
+        }
+
+        return menu
+    }
+
+
+    /// Removes the label from this window (tab group).
+    @IBAction func removeWindowLabel(_ sender: Any?) {
+
+        (self.window as? DocumentWindow)?.windowLabel = ""
+    }
+
+
     /// Prompts for a label for this window (tab group), shown as the window title above the active tab's name.
     @IBAction func labelWindow(_ sender: Any?) {
 
-        guard let window = self.window as? DocumentWindow else { return }
+        guard let window = self.window as? DocumentWindow, !self.isDirectoryDocument else { return }
 
         let alert = NSAlert()
         alert.messageText = String(localized: "Label Window", comment: "alert title")
@@ -268,6 +329,12 @@ final class DocumentWindowController: NSWindowController, NSWindowDelegate {
             else { return }
 
             window.windowLabel = groupLabel
+
+            // the group just gained a tab bar, so every member needs its tab title back
+            for case let sibling as DocumentWindow in window.tabGroup?.windows ?? [] {
+                (sibling.windowController as? DocumentWindowController)?
+                    .synchronizeWindowTitleWithDocumentName()
+            }
         }
     }
 
