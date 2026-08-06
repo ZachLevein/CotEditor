@@ -210,12 +210,63 @@ final class DocumentWindowController: NSWindowController, NSWindowDelegate {
             self.window?.subtitle = self.fileDocument?.fileURL?.lastPathComponent
                 ?? self.fileDocument?.displayName
                 ?? ""
+        } else if let window = self.window as? DocumentWindow {
+            // display the user-set window label as the title with the document name below it
+            let documentTitle = window.title
+            if window.windowLabel.isEmpty {
+                window.tab.title = documentTitle
+                window.subtitle = ""
+            } else {
+                window.tab.title = documentTitle
+                window.title = window.windowLabel
+                window.subtitle = documentTitle
+            }
         }
     }
     
     
+    /// Prompts for a label for this window (tab group), shown as the window title above the active tab's name.
+    @IBAction func labelWindow(_ sender: Any?) {
+
+        guard let window = self.window as? DocumentWindow else { return }
+
+        let alert = NSAlert()
+        alert.messageText = String(localized: "Label Window", comment: "alert title")
+        alert.informativeText = String(localized: "The label is shown as the window title with the active tab's name below it. Leave empty to remove the label.")
+        alert.addButton(withTitle: String(localized: "OK"))
+        alert.addButton(withTitle: String(localized: "Cancel"))
+
+        let field = NSTextField(string: window.windowLabel)
+        field.frame = NSRect(x: 0, y: 0, width: 240, height: 22)
+        alert.accessoryView = field
+        alert.window.initialFirstResponder = field
+
+        alert.beginSheetModal(for: window) { response in
+            guard response == .alertFirstButtonReturn else { return }
+
+            window.windowLabel = field.stringValue.trimmingCharacters(in: .whitespaces)
+        }
+    }
+
+
     // MARK: Window Delegate
-    
+
+    func windowDidBecomeMain(_ notification: Notification) {
+
+        // adopt the tab group's label when this window newly joined a labeled group
+        if let window = self.window as? DocumentWindow,
+           window.windowLabel.isEmpty,
+           let groupLabel = (window.tabGroup?.windows ?? [])
+            .compactMap({ ($0 as? DocumentWindow)?.windowLabel })
+            .first(where: { !$0.isEmpty })
+        {
+            window.windowLabel = groupLabel
+        }
+
+        self.synchronizeWindowTitleWithDocumentName()
+    }
+
+
     func windowWillUseStandardFrame(_ window: NSWindow, defaultFrame newFrame: NSRect) -> NSRect {
         
         guard let frameSize = Self.userFrameSize(for: window) else { return newFrame }

@@ -1181,6 +1181,12 @@ CA
                                                 <action selector="toggleKeepOnTop:" target="Ady-hI-5gd" id="jT9-SB-I5W"/>
                                             </connections>
                                         </menuItem>
+                                        <menuItem title="Label Window…" id="zLW-00-itm">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="labelWindow:" target="Ady-hI-5gd" id="zLW-01-act"/>
+                                            </connections>
+                                        </menuItem>
                                         <menuItem isSeparatorItem="YES" id="92"/>
                                         <menuItem title="Bring All to Front" id="5">
                                             <modifierMask key="keyEquivalentModifierMask"/>

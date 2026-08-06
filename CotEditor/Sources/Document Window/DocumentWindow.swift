@@ -44,6 +44,20 @@ final class DocumentWindow: NSWindow {
         }
     }
     
+    @objc dynamic var windowLabel: String = "" {
+
+        didSet {
+            guard windowLabel != oldValue else { return }
+
+            // share the label with all windows in the same tab group
+            for case let window as DocumentWindow in self.tabGroup?.windows ?? [] {
+                window.windowLabel = windowLabel
+            }
+
+            (self.windowController as? DocumentWindowController)?.synchronizeWindowTitleWithDocumentName()
+        }
+    }
+
     @objc dynamic var backgroundAlpha: Double = 1.0 {
         
         didSet {
@@ -80,15 +94,17 @@ final class DocumentWindow: NSWindow {
     
     override static var restorableStateKeyPaths: [String] {
         
-        super.restorableStateKeyPaths + [#keyPath(backgroundAlpha), #keyPath(level)]
+        super.restorableStateKeyPaths + [#keyPath(backgroundAlpha), #keyPath(level), #keyPath(windowLabel)]
     }
-    
-    
+
+
     override static func allowedClasses(forRestorableStateKeyPath keyPath: String) -> [AnyClass] {
-        
+
         switch keyPath {
             case #keyPath(backgroundAlpha), #keyPath(level):
                 [NSNumber.self]
+            case #keyPath(windowLabel):
+                [NSString.self]
             default:
                 super.allowedClasses(forRestorableStateKeyPath: keyPath)
         }
