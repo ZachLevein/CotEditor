@@ -2,6 +2,24 @@
 
 CotEditor is a lightweight plain text editor designed for macOS. The project aims to provide a general plain text editor for everyone with an intuitive macOS-native user interface.
 
+## Customized fork
+
+The active fork is **[ZachLevein/CotEditor](https://github.com/ZachLevein/CotEditor)** (`origin`). `upstream` is [coteditor/CotEditor](https://github.com/coteditor/CotEditor). The AutoFloLabs legacy repository is retired; do not use it for builds or publication. This fork is based on 7.0.7, with `beta` for integration and `main` for separately authorized promotion.
+
+- **Themes** is a top-level menu: select a theme family, use **Cycle Theme (⌥⌘K)**, or choose **Match System / Light / Dark**. Checkmarks reflect the app's saved preferences. Light/dark pairs are grouped under one name; a theme with only one variant uses that available variant.
+- Theme changes run inside the app through `ThemeManager`, including user-installed themes. They do not invoke shell scripts or require Full Disk Access. The old generated **Script → Themes** group is hidden when its `_theme-lib.sh` marker is present; other scripts are unaffected. Do not reinstall the old theme-menu scripts to configure this menu.
+- **Window → Label Window…**, or the title-bar context menu, sets a label shared by a tab group. The label appears as the title and the active document as its subtitle, and survives relaunch.
+
+### Working on this fork
+
+Use an isolated topic based on current `beta`; land verified work onto `beta`. Publishing a release or promoting to `main` is a separate operation. The local gmux workspace name is `autofloeditor`; `coteditor` names the separate configuration repository.
+
+The menu is built in `CotEditor/Sources/Application/AppDelegate.swift`; family/appearance resolution belongs to `CotEditor/Sources/Setting Managers/ThemeManager.swift`. Legacy script-group suppression belongs to `ScriptManager.swift` in the same directory. Keep one theme list and the existing app preferences as the source of truth.
+
+For window-label changes, never access `window.tab` during window placement: it creates a tab object and can prevent tab grouping. Defer tab-group inspection outside `windowDidBecomeMain`; show the title-bar context menu on mouse-up. Verify New Tab, joining/merging tab groups, labels, and relaunch after changes in that area.
+
+## Upstream project
+
 - __Requirement__: macOS Sequoia 15 or later
 - __Web Site__: <https://coteditor.com>
 - __Mac App Store__: <https://apps.apple.com/app/coteditor/id1024640650>
@@ -58,21 +76,25 @@ CotEditor has its own contributing guidelines. Please read [CONTRIBUTING.md](CON
 
 ### Build for ad‑hoc usage
 
-For those people who just want to build and play with CotEditor locally.
+Ad-hoc signing is already selected in `Configurations/CodeSigning.xcconfig`. From the source checkout:
 
-1. Open `CotEditor.xcodeproj` in Xcode.
-1. Switch to ad-hoc build mode:
-    1. Open `Configurations/CodeSigning.xcconfig`.
-    1. Comment out `#include "CodeSigning-Default.xcconfig"`.
-    1. Uncomment `#include "CodeSigning-AdHoc.xcconfig"`.
-1. Build the “CotEditor” scheme.
+```sh
+xcodebuild -project CotEditor.xcodeproj -scheme CotEditor \
+  -configuration Release -derivedDataPath build \
+  -destination 'platform=macOS,arch=arm64' \
+  -skipPackagePluginValidation -skipMacroValidation build
+codesign --verify --deep --strict build/Build/Products/Release/CotEditor.app
+```
 
+Before installing, quit CotEditor normally and let it preserve open documents; do not force-quit or discard unsaved work. Then install and launch:
 
-### Build for distribution
+```sh
+ditto build/Build/Products/Release/CotEditor.app /Applications/CotEditor.app
+codesign --verify --deep --strict /Applications/CotEditor.app
+open /Applications/CotEditor.app
+```
 
-1. Open `CotEditor.xcodeproj` in Xcode.
-1. Build the “CotEditor” scheme.
-
+Verify the actual installed app: Themes is top-level with no generated duplicate under Script; theme selection, Light/Dark/Match System, and cycling work; existing documents and window labels restore. A shell test alone does not verify a menu action. Updating `beta` does not replace the installed app.
 
 
 ## License

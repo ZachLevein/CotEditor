@@ -1,5 +1,17 @@
 # Change Log
 
+Customized fork (2026-09-28)
+--------------------------
+
+- Add a native top-level **Themes** menu with paired theme families, active checkmarks, **Cycle Theme (⌥⌘K)**, and **Match System / Light / Dark**.
+- Replace the generated theme-menu scripts with in-app theme/preference actions, eliminating their container-access and script-task failures. Hide the obsolete generated Script → Themes group while preserving other scripts.
+- Document the active `ZachLevein/CotEditor` fork, beta integration workflow, ad-hoc build/install procedure, and existing window-label/tab-placement constraints.
+
+Customized fork (2026-08-06)
+--------------------------
+
+- Add persistent per-tab-group window labels, a title-bar labeling context menu, and fixes preserving native tab placement. Enable ad-hoc signing for local builds.
+
 7.0.7 (2026-07-13)
 --------------------------
 
