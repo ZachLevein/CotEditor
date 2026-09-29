@@ -8,13 +8,26 @@ The active fork is **[ZachLevein/CotEditor](https://github.com/ZachLevein/CotEdi
 
 - **Themes** is a top-level menu: select a theme family, use **Cycle Theme (⌥⌘K)**, or choose **Match System / Light / Dark**. Checkmarks reflect the app's saved preferences. Light/dark pairs are grouped under one name; a theme with only one variant uses that available variant.
 - Theme changes run inside the app through `ThemeManager`, including user-installed themes. They do not invoke shell scripts or require Full Disk Access. The old generated **Script → Themes** group is hidden when its `_theme-lib.sh` marker is present; other scripts are unaffected. Do not reinstall the old theme-menu scripts to configure this menu.
-- **Window → Label Window…**, or the title-bar context menu, sets a label shared by a tab group. The label appears as the title and the active document as its subtitle, and survives relaunch.
+- **View → Window → Label Window…**, or the title-bar context menu, sets a label shared by a tab group. The label appears as the title and the active document as its subtitle, and survives relaunch.
+
+### Menu layout
+
+The menu bar is **CotEditor · File · Edit · Format · View · Themes · Script** (Script uses its icon). Secondary command groups are nested:
+
+| Commands | Location |
+|---|---|
+| Find & Replace, navigation | **Edit → Find**; **⌘F** still opens Find & Replace |
+| Text transformations, snippets, indentation | **Format → Text** |
+| Window management and labels | **View → Window** |
+| Help | **CotEditor → Help** |
+
+The original actions and shortcuts are retained. Quit remains the final command in the CotEditor menu.
 
 ### Working on this fork
 
 Use an isolated topic based on current `beta`; land verified work onto `beta`. Publishing a release or promoting to `main` is a separate operation. The local gmux workspace name is `autofloeditor`; `coteditor` names the separate configuration repository.
 
-The menu is built in `CotEditor/Sources/Application/AppDelegate.swift`; family/appearance resolution belongs to `CotEditor/Sources/Setting Managers/ThemeManager.swift`. Legacy script-group suppression belongs to `ScriptManager.swift` in the same directory. Keep one theme list and the existing app preferences as the source of truth.
+The menu is built in `CotEditor/Sources/Application/AppDelegate.swift`; `organizeMainMenu()` reparents existing menu items using outlets from `CotEditor/Storyboards/Base.lproj/Main.storyboard`. Preserve their system-menu identities and actions rather than duplicating commands. Family/appearance resolution belongs to `CotEditor/Sources/Setting Managers/ThemeManager.swift`. Legacy script-group suppression belongs to `ScriptManager.swift` in the same directory. Keep one theme list and the existing app preferences as the source of truth.
 
 For window-label changes, never access `window.tab` during window placement: it creates a tab object and can prevent tab grouping. Defer tab-group inspection outside `windowDidBecomeMain`; show the title-bar context menu on mouse-up. Verify New Tab, joining/merging tab groups, labels, and relaunch after changes in that area.
 
@@ -94,7 +107,7 @@ codesign --verify --deep --strict /Applications/CotEditor.app
 open /Applications/CotEditor.app
 ```
 
-Verify the actual installed app: Themes is top-level with no generated duplicate under Script; theme selection, Light/Dark/Match System, and cycling work; existing documents and window labels restore. A shell test alone does not verify a menu action. Updating `beta` does not replace the installed app.
+Verify the actual installed app: the menu bar and nested groups match the layout above, **⌘F** opens Find & Replace, and Text has a visible title; Themes is top-level with no generated duplicate under Script; theme selection, Light/Dark/Match System, and cycling work; existing documents and window labels restore. A shell test alone does not verify a menu action. Updating `beta` does not replace the installed app.
 
 
 ## License

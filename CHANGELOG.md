@@ -3,6 +3,7 @@
 Customized fork (2026-09-28)
 --------------------------
 
+- Simplify the menu bar by nesting **Window under View**, **Text under Format**, **Find under Edit**, and **Help under CotEditor**, preserving existing commands and keyboard shortcuts. Remove Text's empty attributed title so its submenu label displays correctly.
 - Add a native top-level **Themes** menu with paired theme families, active checkmarks, **Cycle Theme (⌥⌘K)**, and **Match System / Light / Dark**.
 - Replace the generated theme-menu scripts with in-app theme/preference actions, eliminating their container-access and script-task failures. Hide the obsolete generated Script → Themes group while preserving other scripts.
 - Document the active `ZachLevein/CotEditor` fork, beta integration workflow, ad-hoc build/install procedure, and existing window-label/tab-placement constraints.
