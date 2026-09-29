@@ -750,7 +750,6 @@ Gw
                                 </menu>
                             </menuItem>
                             <menuItem title="Text" id="579">
-                                <attributedString key="attributedTitle"/>
                                 <menu key="submenu" title="Text" id="578">
                                     <items>
                                         <menuItem title="Insert Snippet" secondaryImage="text.viewfinder" catalog="system" id="15m-xz-4oB">
@@ -1278,6 +1277,12 @@ CA
                 <customObject id="Ady-hI-5gd" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
                 <customObject id="Voe-Tx-rLC" customClass="AppDelegate" customModule="CotEditor" customModuleProvider="target">
                     <connections>
+                        <outlet property="editMenu" destination="169" id="mnu-edt-new"/>
+                        <outlet property="formatMenu" destination="246" id="mnu-fmt-new"/>
+                        <outlet property="viewMenu" destination="324" id="mnu-viw-new"/>
+                        <outlet property="textMenu" destination="578" id="mnu-txt-new"/>
+                        <outlet property="findMenu" destination="kGA-vM-cdL" id="mnu-fnd-new"/>
+                        <outlet property="helpMenu" destination="106" id="mnu-hlp-new"/>
                         <outlet property="encodingsMenu" destination="300" id="Oy6-3l-RCI"/>
                         <outlet property="lineEndingsMenu" destination="296" id="U4V-rN-Wn0"/>
                         <outlet property="multipleReplaceMenu" destination="OaT-5c-bMY" id="YLT-05-lBG"/>

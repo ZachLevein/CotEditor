@@ -115,6 +115,12 @@ extension Logger {
     @IBOutlet private weak var snippetMenu: NSMenu?
     @IBOutlet private weak var multipleReplaceMenu: NSMenu?
     @IBOutlet private weak var scriptMenu: NSMenu?
+    @IBOutlet private weak var editMenu: NSMenu?
+    @IBOutlet private weak var formatMenu: NSMenu?
+    @IBOutlet private weak var viewMenu: NSMenu?
+    @IBOutlet private weak var textMenu: NSMenu?
+    @IBOutlet private weak var findMenu: NSMenu?
+    @IBOutlet private weak var helpMenu: NSMenu?
     
     
     // MARK: Lifecycle
@@ -564,12 +570,43 @@ extension Logger {
         self.themesMenu?.items = [cycle, .separator()] + themes + [.separator()] + appearances
     }
     
+    /// Keeps secondary command groups off the top-level menu bar without
+    /// replacing their actions, keyboard shortcuts, or system menu identities.
+    private func organizeMainMenu() {
+        
+        self.nestMenu(self.textMenu, under: self.formatMenu)
+        self.nestMenu(NSApp.windowsMenu, under: self.viewMenu)
+        self.nestMenu(self.findMenu, under: self.editMenu)
+        self.nestMenu(self.helpMenu, under: NSApp.mainMenu?.items.first?.submenu)
+    }
+    
+    
+    private func nestMenu(_ menu: NSMenu?, under parent: NSMenu?) {
+        
+        guard let menu, let parent, let mainMenu = NSApp.mainMenu,
+              let item = mainMenu.items.first(where: { $0.submenu === menu })
+        else { return }
+        
+        mainMenu.removeItem(item)
+        // Keep Quit as the application menu's final command.
+        if let quitIndex = parent.items.firstIndex(where: { $0.action == #selector(NSApplication.terminate) }) {
+            parent.insertItem(item, at: quitIndex)
+            parent.insertItem(.separator(), at: quitIndex + 1)
+        } else {
+            parent.addItem(.separator())
+            parent.addItem(item)
+        }
+    }
+    
+    
     /// Prepares the main menu.
     private func prepareMainMenu() {
         
         assert(NSApp.mainMenu != nil)
         
         guard self.menuUpdateObservers.isEmpty else { return assertionFailure() }
+        
+        self.organizeMainMenu()
         
         self.updateEncodingMenu(self.encodingsMenu!)
         
