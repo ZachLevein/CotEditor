@@ -289,6 +289,16 @@ extension Logger {
         switch item.action {
             case #selector(importSettings):
                 return !self.isSettingsImporterPresented
+            case #selector(selectThemeFamily(_:)):
+                if let menuItem = item as? NSMenuItem {
+                    menuItem.state = ThemeManager.baseName(for: UserDefaults.standard[.theme]) == menuItem.title ? .on : .off
+                }
+            case #selector(selectThemeAppearance):
+                if let menuItem = item as? NSMenuItem {
+                    menuItem.state = UserDefaults.standard[.documentAppearance].rawValue == menuItem.tag ? .on : .off
+                }
+            case #selector(cycleTheme):
+                return !ThemeManager.shared.settingNames.isEmpty
             default: break
         }
         
@@ -469,7 +479,90 @@ extension Logger {
     }
     
     
+    @IBAction private func selectThemeFamily(_ sender: NSMenuItem) {
+        
+        self.selectThemeFamily(named: sender.title)
+    }
+    
+    
+    @IBAction private func cycleTheme(_ sender: Any?) {
+        
+        let names = self.themeFamilies(ThemeManager.shared.settingNames)
+        guard !names.isEmpty else { return }
+        
+        let current = ThemeManager.baseName(for: UserDefaults.standard[.theme])
+        let index = names.firstIndex(of: current).map { ($0 + 1) % names.count } ?? 0
+        self.selectThemeFamily(named: names[index])
+    }
+    
+    
+    @IBAction private func selectThemeAppearance(_ sender: NSMenuItem) {
+        
+        guard let mode = AppearanceMode(rawValue: sender.tag) else { return }
+        
+        UserDefaults.standard[.documentAppearance] = mode
+        self.selectThemeFamily(named: ThemeManager.baseName(for: UserDefaults.standard[.theme]))
+    }
+    
+    
     // MARK: Private Methods
+    
+    private func selectThemeFamily(named name: String) {
+        
+        do {
+            try ThemeManager.shared.selectFamily(named: name, inDarkMode: NSApp.effectiveAppearance.isDark)
+        } catch {
+            NSApp.presentError(error)
+        }
+    }
+    
+    
+    private func themeFamilies(_ names: [String]) -> [String] {
+        
+        Array(Set(names.map { ThemeManager.baseName(for: $0) })).sorted(using: .localizedStandard)
+    }
+    
+    
+    /// Move the existing native theme menu to the menu bar.
+    private func promoteThemesMenu() {
+        
+        guard let menu = self.themesMenu, let mainMenu = NSApp.mainMenu else { return }
+        
+        if let parent = menu.supermenu, let item = parent.items.first(where: { $0.submenu === menu }) {
+            item.submenu = nil
+            parent.removeItem(item)
+        }
+        menu.title = "Themes"
+        let item = NSMenuItem(title: "Themes", action: nil, keyEquivalent: "")
+        item.submenu = menu
+        let index = mainMenu.items.firstIndex { $0.submenu === self.scriptMenu } ?? mainMenu.numberOfItems
+        mainMenu.insertItem(item, at: index)
+    }
+    
+    
+    private func updateThemesMenu(names: [String]) {
+        
+        let cycle = NSMenuItem(title: "Cycle Theme", action: #selector(cycleTheme), keyEquivalent: "k")
+        cycle.keyEquivalentModifierMask = [.command, .option]
+        cycle.target = self
+        let themes = self.themeFamilies(names).map { name in
+            let item = NSMenuItem(title: name, action: #selector(selectThemeFamily(_:)), keyEquivalent: "")
+            item.target = self
+            return item
+        }
+        let appearances = [AppearanceMode.default, .light, .dark].map { mode in
+            let title = switch mode {
+                case .default: "Match System"
+                case .light: "Light"
+                case .dark: "Dark"
+            }
+            let item = NSMenuItem(title: title, action: #selector(selectThemeAppearance), keyEquivalent: "")
+            item.tag = mode.rawValue
+            item.target = self
+            return item
+        }
+        self.themesMenu?.items = [cycle, .separator()] + themes + [.separator()] + appearances
+    }
     
     /// Prepares the main menu.
     private func prepareMainMenu() {
@@ -510,9 +603,9 @@ extension Logger {
             .assign(to: \.items, on: self.syntaxesMenu!)
             .store(in: &self.menuUpdateObservers)
         
+        self.promoteThemesMenu()
         ThemeManager.shared.$settingNames
-            .map { $0.map { NSMenuItem(title: $0, action: #selector((any ThemeChanging).changeTheme), keyEquivalent: "") } }
-            .assign(to: \.items, on: self.themesMenu!)
+            .sink { [weak self] in self?.updateThemesMenu(names: $0) }
             .store(in: &self.menuUpdateObservers)
         
         SnippetManager.shared.menu = self.snippetMenu!

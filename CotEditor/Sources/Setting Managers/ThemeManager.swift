@@ -113,7 +113,7 @@ import URLUtils
     /// - Returns: A setting name, or `nil` if none exists.
     func equivalentSettingName(to name: String, forDark: Bool) -> String? {
         
-        let baseName = name.replacing(/\ \((Dark|Light)\)$/, with: "", maxReplacements: 1)
+        let baseName = Self.baseName(for: name)
         
         let settingName = baseName + " " + (forDark ? "(Dark)" : "(Light)")
         if self.settingNames.contains(settingName) {
@@ -172,6 +172,27 @@ import URLUtils
         try self.save(setting: Setting(), name: name)
         
         return name
+    }
+    
+    
+    /// The shared name of a light/dark theme pair.
+    nonisolated static func baseName(for name: String) -> String {
+        
+        name.replacing(/\ \((Dark|Light)\)$/, with: "", maxReplacements: 1)
+    }
+    
+    
+    /// Selects a theme family using the existing application appearance preference.
+    func selectFamily(named name: String, inDarkMode: Bool) throws {
+        
+        let usesDark = self.usesDarkAppearance(inDarkMode: inDarkMode)
+        let variant = self.equivalentSettingName(to: name, forDark: usesDark)
+            ?? self.equivalentSettingName(to: name, forDark: !usesDark)
+            ?? name
+        let theme = try self.setting(name: variant)
+        
+        UserDefaults.standard[.pinsThemeAppearance] = (theme.isDarkTheme != usesDark)
+        UserDefaults.standard[.theme] = variant
     }
     
     

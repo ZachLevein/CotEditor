@@ -307,6 +307,14 @@ extension NSAppleEventDescriptor: @retroactive @unchecked Sendable { }
             let name = url.deletingPathExtension().lastPathComponent
                 .replacing(/^\d+\)/.asciiOnlyDigits(), with: "", maxReplacements: 1)  // remove ordering prefix
             
+            // The native Themes menu supersedes this generated legacy group.
+            // Leave unrelated user scripts and folders alone.
+            if name == "Themes", url.hasDirectoryPath,
+               FileManager.default.fileExists(atPath: url.appendingPathComponent("_theme-lib.sh").path)
+            {
+                continue
+            }
+            
             let item: ScriptMenuItem? = if name == Self.separator {
                 .separator
             } else if let script = try? ScriptDescriptor(contentsOf: url, name: name)?.makeScript() {
