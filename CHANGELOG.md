@@ -1,5 +1,10 @@
 # Change Log
 
+Customized fork (2026-09-29)
+--------------------------
+
+- Match the window header and native tab bar to the selected theme's background, updating live on theme changes while preserving native window buttons, titles, labels, and tabs.
+
 Customized fork (2026-09-28)
 --------------------------
 
