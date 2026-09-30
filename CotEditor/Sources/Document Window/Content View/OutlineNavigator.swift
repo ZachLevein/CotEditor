@@ -39,6 +39,7 @@ import SyntaxParsers
     var isOutlinePickerPresented = false
     
     private(set) var isVerticalOrientation: Bool = false
+    private(set) var backgroundColor: NSColor = .windowBackgroundColor
     
     
     // MARK: Private Properties
@@ -90,6 +91,9 @@ import SyntaxParsers
         
         self.updateSelectionFromTextView()
         self.viewObservers = [
+            textView.publisher(for: \.backgroundColor, options: [.initial, .new])
+                .sink { [weak self] in self?.backgroundColor = $0 },
+
             textView.publisher(for: \.layoutOrientation, options: .initial)
                 .sink { [weak self] in self?.isVerticalOrientation = $0 == .vertical },
             

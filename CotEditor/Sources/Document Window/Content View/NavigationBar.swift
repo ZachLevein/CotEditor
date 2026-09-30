@@ -88,7 +88,8 @@ struct NavigationBar: View {
         .buttonStyle(.borderless)
         .controlSize(.small)
         .padding(.horizontal, isLiquidGlass ? 4 : 2)
-        .background(.windowBackground)
+        // extends under the transparent title bar and tab bar, tinting the window header with the theme
+        .background(Color(nsColor: self.outlineNavigator.backgroundColor))
         .frame(height: isLiquidGlass ? 24 : 20)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(String(localized: "Navigation Bar", table: "Document", comment: "accessibility label"))
